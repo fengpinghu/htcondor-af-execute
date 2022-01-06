@@ -23,8 +23,18 @@ env:
   IMAGE_NAME: fengping18/htcondor-af
 
 jobs:
-  build:
 
+  make-date-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      dtag: ${{ steps.mkdatetag.outputs.dtag }}
+    steps:
+    - name: make date tag
+      id: mkdatetag
+      run: echo "::set-output name=dtag::$(date +%Y%m%d-%H%M)"
+
+  build:
+    needs: [make-date-tag]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -68,6 +78,20 @@ jobs:
       #  with:
       #    images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
+      - name: Generate tag list
+        id: generate-tag-list
+        env:
+          TIMESTAMP: ${{ needs.make-date-tag.outputs.dtag }}
+        run: |
+          tag_list=()
+          tag_list+=(${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:"latest")
+          tag_list+=(${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$TIMESTAMP)
+          # This causes the tag_list array to be comma-separated below,
+          # which is required for build-push-action
+          IFS=,
+          echo "::set-output name=taglist::${tag_list[*]}"
+
+
       # Build and push Docker image with Buildx (don't push on PR)
       # https://github.com/docker/build-push-action
       - name: Build and push Docker image
@@ -76,7 +100,7 @@ jobs:
         with:
           context: .
           push: ${{ github.event_name != 'pull_request' }}
-          tags: 'fengping18/htcondor-af:test'
+          tags: "${{ steps.generate-tag-list.outputs.taglist }}"
           labels: ${{ steps.meta.outputs.labels }}
 
       # Sign the resulting Docker image digest except on PRs.
