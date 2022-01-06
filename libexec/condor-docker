@@ -8,6 +8,7 @@ To enable, copy the program and set the following Condor config:
 DOCKER = /usr/local/libexec/condor-docker
 """
 
+
 import argparse
 import contextlib
 import socket
