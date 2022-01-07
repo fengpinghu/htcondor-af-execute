@@ -16,12 +16,13 @@ on:
     branches: [ master ]
 
 env:
-  # Use docker.io for Docker Hub if empty
-  REGISTRY: docker.io
-  # github.repository as <account>/<repo>
-  #IMAGE_NAME: ${{ github.repository }}
-  IMAGE_NAME: fengping18/htcondor-af
-
+  # Dockhub
+  #REGISTRY: docker.io
+  #IMAGE_NAME: fengping18/htcondor-af
+  # harbor
+  REGISTRY: hub.opensciencegrid.org
+  IMAGE_NAME: usatlas/htcondor-af
+  
 jobs:
 
   make-date-tag:
@@ -67,8 +68,8 @@ jobs:
         uses: docker/login-action@28218f9b04b4f3f62068d7b6ce6ca5b26e35336c
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.DOCKER_USER }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          username: ${{ secrets.OSG_HARBOR_USER }}
+          password: ${{ secrets.OSG_HARBOR_PASSWORD }}
 
       # Extract metadata (tags, labels) for Docker
       # https://github.com/docker/metadata-action
@@ -84,7 +85,7 @@ jobs:
           TIMESTAMP: ${{ needs.make-date-tag.outputs.dtag }}
         run: |
           tag_list=()
-          tag_list+=(${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:"latest")
+          #tag_list+=(${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:"latest")
           tag_list+=(${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$TIMESTAMP)
           # This causes the tag_list array to be comma-separated below,
           # which is required for build-push-action
